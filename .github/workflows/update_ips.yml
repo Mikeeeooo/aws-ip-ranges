@@ -15,10 +15,10 @@ jobs:
         run: |
           curl -s https://ip-ranges.amazonaws.com/ip-ranges.json > raw.json
           # Create files for different regions
-          # 1. Get a list of all unique regions from the S3 data
+          # 1. Get a list of all unique regions from the EC2 data
           # 2. Loop through them and create a file for each
-          for region in $(jq -r '.prefixes[] | select(.service=="S3") | .region' raw.json | sort -u); do
-            jq -r --arg REG "$region" '.prefixes[] | select(.service=="S3" and .region==$REG) | .ip_prefix' raw.json > "s3-${region}.txt"
+          for region in $(jq -r '.prefixes[] | select(.service=="EC2") | .region' raw.json | sort -u); do
+            jq -r --arg REG "$region" '.prefixes[] | select(.service=="EC2" and .region==$REG) | .ip_prefix' raw.json > "EC2-${region}.txt"
           done
       - name: Commit and Push
         run: |
