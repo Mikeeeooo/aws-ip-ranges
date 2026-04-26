@@ -15,9 +15,11 @@ jobs:
         run: |
           curl -s https://ip-ranges.amazonaws.com/ip-ranges.json > raw.json
           # Create files for different regions
-          jq -r '.prefixes[] | select(.region=="us-east-1" and .service=="S3") | .ip_prefix' raw.json > s3-us-east-1.txt
-          jq -r '.prefixes[] | select(.region=="us-west-2" and .service=="S3") | .ip_prefix' raw.json > s3-us-west-2.txt
-          jq -r '.prefixes[] | select(.region=="eu-central-1" and .service=="S3") | .ip_prefix' raw.json > s3-eu-central-1.txt
+          # 1. Get a list of all unique regions from the S3 data
+          # 2. Loop through them and create a file for each
+          for region in $(jq -r '.prefixes[] | select(.service=="S3") | .region' raw.json | sort -u); do
+            jq -r --arg REG "$region" '.prefixes[] | select(.service=="S3" and .region==$REG) | .ip_prefix' raw.json > "s3-${region}.txt"
+          done
       - name: Commit and Push
         run: |
           git config --local user.email "action@github.com"
