@@ -1,0 +1,27 @@
+name: Update Regional IPs
+on:
+  schedule:
+    - cron: '0 0 * * *' # Runs daily at midnight
+  workflow_dispatch:      # Allows you to run it manually
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch and Filter
+        run: |
+          curl -s https://amazonaws.com > raw.json
+          # Create files for different regions
+          jq -r '.prefixes[] | select(.region=="us-east-1" and .service=="S3") | .ip_prefix' raw.json > s3-us-east-1.txt
+          jq -r '.prefixes[] | select(.region=="us-west-2" and .service=="S3") | .ip_prefix' raw.json > s3-us-west-2.txt
+          jq -r '.prefixes[] | select(.region=="eu-central-1" and .service=="S3") | .ip_prefix' raw.json > s3-eu-central-1.txt
+      - name: Commit and Push
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add *.txt
+          git commit -m "Update regional lists" || exit 0
+          git push
